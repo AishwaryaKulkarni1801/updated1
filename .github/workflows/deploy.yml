@@ -1,0 +1,95 @@
+name: Deploy Angular App to GitHub Pages
+
+on:
+  push:
+    branches: [ ai-prompt-testing ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build-test-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Tests with Coverage
+        run: |
+          echo "🧪 Running Jest tests with coverage validation..."
+          npm run test -- --coverage --watchAll=false --passWithNoTests 2>&1 | tee test-output.log
+          
+          # Check if tests passed
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            echo "❌ Tests failed! Stopping deployment."
+            exit 1
+          fi
+          
+          # Extract coverage percentages
+          STMT_COV=$(grep -E "All files.*%" test-output.log | awk '{print $4}' | sed 's/%//' || echo "0")
+          TOTAL_COV=$STMT_COV
+          
+          echo "📊 Total Coverage: ${TOTAL_COV}%"
+          
+          # Check 80% threshold
+          if (( $(echo "$TOTAL_COV < 80" | bc -l) )); then
+            echo "❌ Coverage ${TOTAL_COV}% < 80%. Stopping deployment."
+            exit 1
+          fi
+          
+          echo "✅ Coverage validation passed (${TOTAL_COV}% ≥ 80%)"
+
+      - name: Build Angular Application
+        run: |
+          echo "🏗️ Building Angular application for GitHub Pages..."
+          npm run build -- --base-href '/updated1/'
+
+      - name: Fix SPA Routing
+        run: |
+          echo "🔧 Adding 404.html for SPA routing..."
+          cp dist/updated1/index.html dist/updated1/404.html
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v4
+        with:
+          enablement: true
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/updated1
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Display Deployment URL
+        run: |
+          echo "🚀 Deployment successful!"
+          echo "📱 Your Angular app is now live at: ${{ steps.deployment.outputs.page_url }}"
+          echo "🔗 Direct link: https://aishwaryakulkarni1801.github.io/updated1/"
