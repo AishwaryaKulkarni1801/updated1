@@ -16,7 +16,25 @@ Run `ng build` to build the project. The build artifacts will be stored in the `
 
 ## Running unit tests
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+This project uses [Jest](https://jestjs.io/) as the testing framework.
+
+Run `npm test` to execute the unit tests via Jest.
+
+Additional test commands:
+- `npm run test:watch` - Run tests in watch mode (hot reload)
+- `npm run test:coverage` - Run tests with coverage report
+- `npm run test:ci` - Run tests optimized for CI/CD
+
+### Jest Documentation
+
+For comprehensive information about the Jest setup and testing patterns, see:
+- **[JEST_MIGRATION_GUIDE.md](./JEST_MIGRATION_GUIDE.md)** - Complete migration guide and documentation
+- **[JEST_QUICK_REFERENCE.md](./JEST_QUICK_REFERENCE.md)** - Quick reference for common Jest patterns
+- **[MIGRATION_SUMMARY.md](./MIGRATION_SUMMARY.md)** - Migration summary and test results
+
+### Verify Jest Setup
+
+Run `node verify-jest-setup.js` to verify your Jest configuration is correct.
 
 ## Running end-to-end tests
 
